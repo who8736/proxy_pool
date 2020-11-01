@@ -46,10 +46,11 @@ class Fetcher(object):
             try:
                 for proxy in fetcher():
                     if proxy in proxy_set:
-                        self.log.info('ProxyFetch - %s: %s exist' % (fetch_name, proxy.ljust(23)))
+                        self.log.info(f'ProxyFetch - {fetch_name}: {proxy.protocol}://{proxy.ip}:{proxy.port} exist')
                         continue
                     else:
-                        self.log.info('ProxyFetch - %s: %s success' % (fetch_name, proxy.ljust(23)))
+                        self.log.info(f'ProxyFetch - {fetch_name}: {proxy.protocol}://{proxy.ip}:{proxy.port} success')
+                        # self.log.info('ProxyFetch - %s: %s success' % (fetch_name, proxy.ljust(23)))
                     if proxy.strip():
                         proxy_set.add(proxy)
             except Exception as e:

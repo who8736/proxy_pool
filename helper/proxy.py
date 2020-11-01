@@ -17,9 +17,12 @@ import json
 
 class Proxy(object):
 
-    def __init__(self, proxy, fail_count=0, region="", proxy_type="",
+    def __init__(self, ip, port, protocol='https',
+                 fail_count=0, region="", proxy_type="",
                  source="", check_count=0, last_status="", last_time=""):
-        self._proxy = proxy
+        self._protocol = protocol
+        self._ip = ip
+        self._prot = port
         self._fail_count = fail_count
         self._region = region
         self._type = proxy_type
@@ -36,7 +39,9 @@ class Proxy(object):
         :return:
         """
         proxy_dict = json.loads(proxy_json)
-        return cls(proxy=proxy_dict.get("proxy", ""),
+        return cls(ip=proxy_dict.get("ip", ""),
+                   port=proxy_dict.get("port", ''),
+                   protocol=proxy_dict.get("protocol", 'https'),
                    fail_count=proxy_dict.get("fail_count", 0),
                    region=proxy_dict.get("region", ""),
                    proxy_type=proxy_dict.get("type", ""),
@@ -47,9 +52,24 @@ class Proxy(object):
                    )
 
     @property
-    def proxy(self):
+    def str(self):
         """ 代理 ip:port """
-        return self._proxy
+        return f'{self.protocol}://{self._ip}:{self.port}'
+
+    @property
+    def protocol(self):
+        """ 协议 http/https/socks/socks5 """
+        return self._protocol
+
+    @property
+    def ip(self):
+        """ ip """
+        return self._ip
+
+    @property
+    def port(self):
+        """ port """
+        return self._port
 
     @property
     def fail_count(self):
@@ -104,6 +124,18 @@ class Proxy(object):
         return json.dumps(self.to_dict, ensure_ascii=False)
 
     # --- proxy method ---
+    @protocol.setter
+    def protocol(self, value):
+        self._protocol = value
+
+    @ip.setter
+    def ip(self, value):
+        self._ip = value
+
+    @port.setter
+    def port(self, value):
+        self._port = value
+
     @fail_count.setter
     def fail_count(self, value):
         self._fail_count = value

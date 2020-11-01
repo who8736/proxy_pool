@@ -14,9 +14,12 @@ __author__ = 'JHao'
 
 import re
 from time import sleep
+import requests
+from lxml import etree
+import base64
 
 from util.webRequest import WebRequest
-
+from helper.proxy import Proxy
 
 class ProxyFetcher(object):
     """
@@ -327,3 +330,47 @@ class ProxyFetcher(object):
             ips = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}", r.text)
             for ip in ips:
                 yield ip.strip()
+
+    @staticmethod
+    def freeProxy16():
+        print('-'*30, 'start freeProxyFetch16', '-' * 30)
+        proxy = '127.0.0.1:10802'
+        proxies = {'http': proxy, 'https': proxy}
+        HEADERS = {
+            'User-Agent': """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"""}
+        urls = [
+            'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
+            'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
+            'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/3',
+            'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/4',
+            'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/5',
+        ]
+        for url in urls:
+            retry = 3
+            r = None
+            while retry > 0:
+                try:
+                    r = requests.get(url, proxies=proxies, timeout=10,
+                                     headers=HEADERS)
+                    print(r.text)
+                    retry = 0
+                except Exception as e:
+                    print(e)
+                    retry -= 1
+            if r is not None:
+                html = etree.HTML(r.text)
+                ret = html.xpath('//*[@id="proxy_list"]/tbody/tr')
+                for r in ret:
+                    try:
+                        ip_script = r.xpath('./td[1]/script/text()')[0]
+                        ip_base64 = re.search('(?:")([\w=]+)(?:")',
+                                              ip_script).groups()[0]
+                        ip = base64.b64decode(ip_base64).decode('utf8')
+                        port = r.xpath('./td[2]/span/text()')[0]
+                        protocol = r.xpath('./td[3]/small/text()')[0]
+                        # port = r.xpath('./td[2]')
+                        # print(ip, port)
+                        print(protocol, ip, port)
+                        yield Proxy(f'{ip}:{port}', protocol=protocol)
+                    except Exception as e:
+                        print(e)

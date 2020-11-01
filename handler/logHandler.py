@@ -19,8 +19,7 @@ import os
 import platform
 from logging.handlers import TimedRotatingFileHandler
 
-from setting import LOG_PATH
-
+from setting import LOG_PATH, LOG_FORMAT
 # # 日志级别
 # CRITICAL = 50
 # FATAL = CRITICAL
@@ -59,7 +58,7 @@ class LogHandler(logging.Logger):
         :param level:
         :return:
         """
-        file_name = os.path.join(LOG_PATH, '{name}.log'.format(name=self.name))
+        file_name = os.path.join(LOG_PATH, f'{self.name}.log')
         # 设置日志回滚, 保存在log目录, 一天保存一个文件, 保留15天
         file_handler = TimedRotatingFileHandler(filename=file_name, when='D', interval=1, backupCount=15)
         file_handler.suffix = '%Y%m%d.log'
@@ -67,7 +66,7 @@ class LogHandler(logging.Logger):
             file_handler.setLevel(self.level)
         else:
             file_handler.setLevel(level)
-        formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
+        formatter = logging.Formatter(LOG_FORMAT)
 
         file_handler.setFormatter(formatter)
         self.file_handler = file_handler
@@ -80,7 +79,7 @@ class LogHandler(logging.Logger):
         :return:
         """
         stream_handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
+        formatter = logging.Formatter(LOG_FORMAT)
         stream_handler.setFormatter(formatter)
         if not level:
             stream_handler.setLevel(self.level)
