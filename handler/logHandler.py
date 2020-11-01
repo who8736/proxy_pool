@@ -14,25 +14,22 @@
 """
 __author__ = 'JHao'
 
-import os
 import logging
+import os
 import platform
-
 from logging.handlers import TimedRotatingFileHandler
 
-# 日志级别
-CRITICAL = 50
-FATAL = CRITICAL
-ERROR = 40
-WARNING = 30
-WARN = WARNING
-INFO = 20
-DEBUG = 10
-NOTSET = 0
+from setting import LOG_PATH
 
-CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
-ROOT_PATH = os.path.join(CURRENT_PATH, os.pardir)
-LOG_PATH = os.path.join(ROOT_PATH, 'log')
+# # 日志级别
+# CRITICAL = 50
+# FATAL = CRITICAL
+# ERROR = 40
+# WARNING = 30
+# WARN = WARNING
+# INFO = 20
+# DEBUG = 10
+# NOTSET = 0
 
 if not os.path.exists(LOG_PATH):
     try:
@@ -46,7 +43,7 @@ class LogHandler(logging.Logger):
     LogHandler
     """
 
-    def __init__(self, name, level=DEBUG, stream=True, file=True):
+    def __init__(self, name, level=logging.DEBUG, stream=True, file=True):
         self.name = name
         self.level = level
         logging.Logger.__init__(self, self.name, level=level)
