@@ -23,33 +23,30 @@ from handler.proxyHandler import ProxyHandler
 from handler.configHandler import ConfigHandler
 
 
-def proxyCheck(proxy_obj):
+def proxyCheck(proxy):
     """
     检测代理是否可用
-    :param proxy_obj: Proxy object
+    :param proxy: Proxy object
     :return: Proxy object, status
     """
 
-    def __proxyCheck(proxy):
+    def __proxyCheck(_proxy):
         for func in validators:
-            if not func(proxy):
+            if not func(_proxy):
                 return False
         return True
 
-    if __proxyCheck(proxy_obj.proxy):
+    if __proxyCheck(proxy):
         # 检测通过 更新proxy属性
-        proxy_obj.check_count += 1
-        proxy_obj.last_status = 1
-        proxy_obj.last_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if proxy_obj.fail_count > 0:
-            proxy_obj.fail_count -= 1
-        return proxy_obj
+        proxy.last_status = 1
+        if proxy.fail_count > 0:
+            proxy.fail_count -= 1
     else:
-        proxy_obj.check_count += 1
-        proxy_obj.last_status = 0
-        proxy_obj.last_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        proxy_obj.fail_count += 1
-        return proxy_obj
+        proxy.last_status = 0
+        proxy.fail_count += 1
+    proxy.check_count += 1
+    proxy.last_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return proxy
 
 
 class Checker(Thread):
@@ -66,39 +63,38 @@ class Checker(Thread):
         self.conf = ConfigHandler()
 
     def run(self):
-        self.log.info("ProxyCheck - {}  : start".format(self.name))
+        self.log.info(f"ProxyCheck - {self.name}  : start")
         while True:
             try:
                 proxy_json = self.queue.get(block=False)
             except Empty:
-                self.log.info("ProxyCheck - {}  : complete".format(self.name))
+                self.log.info(f"ProxyCheck - {self.name}  : complete")
                 break
 
             proxy = Proxy.createFromJson(proxy_json)
             proxy = proxyCheck(proxy)
+            loghead = f'ProxyCheck - {self.name}  : {proxy.str} '
             if self.type == "raw":
                 if proxy.last_status:
                     if self.proxy_handler.exists(proxy):
-                        self.log.info('ProxyCheck - {}  : {} exists'.format(self.name, proxy.proxy.ljust(23)))
+                        self.log.info(f'{loghead} exists')
                     else:
-                        self.log.info('ProxyCheck - {}  : {} success'.format(self.name, proxy.proxy.ljust(23)))
+                        self.log.info(f'{loghead} success')
                         self.proxy_handler.put(proxy)
                 else:
-                    self.log.info('ProxyCheck - {}  : {} fail'.format(self.name, proxy.proxy.ljust(23)))
+                    self.log.info(f'{loghead} fail')
             else:
                 if proxy.last_status:
-                    self.log.info('ProxyCheck - {}  : {} pass'.format(self.name, proxy.proxy.ljust(23)))
+                    self.log.info(f'{loghead} pass')
                     self.proxy_handler.put(proxy)
                 else:
                     if proxy.fail_count > self.conf.maxFailCount:
-                        self.log.info('ProxyCheck - {}  : {} fail, count {} delete'.format(self.name,
-                                                                                           proxy.proxy.ljust(23),
-                                                                                           proxy.fail_count))
+                        self.log.info(f'{loghead} fail, '
+                                      f'count {proxy.fail_count} delete')
                         self.proxy_handler.delete(proxy)
                     else:
-                        self.log.info('ProxyCheck - {}  : {} fail, count {} keep'.format(self.name,
-                                                                                         proxy.proxy.ljust(23),
-                                                                                         proxy.fail_count))
+                        self.log.info(f'{loghead} fail, '
+                                      f'count {proxy.fail_count} keep')
                         self.proxy_handler.put(proxy)
             self.queue.task_done()
 
@@ -112,7 +108,7 @@ def runChecker(tp, queue):
     """
     thread_list = list()
     for index in range(20):
-        thread_list.append(Checker(tp, queue, "thread_%s" % str(index).zfill(2)))
+        thread_list.append(Checker(tp, queue, f"thread_{index:02}"))
 
     for thread in thread_list:
         thread.start()
