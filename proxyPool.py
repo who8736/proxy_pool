@@ -44,4 +44,7 @@ def server():
 
 
 if __name__ == '__main__':
-    cli()
+    pass
+    # cli()
+
+

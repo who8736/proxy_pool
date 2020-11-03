@@ -3,12 +3,16 @@
 import requests
 import random
 from re import findall
+from urllib.parse import urlparse
 from handler.configHandler import ConfigHandler
+from handler.logHandler import LogHandler
 from helper.proxy import Proxy
-from setting import UA
+from setting import UA, VERIFY_URL
 
 conf = ConfigHandler()
 validators = []
+
+logger = LogHandler("validators")
 
 
 def validator(func):
@@ -23,15 +27,20 @@ def formatValidator(proxy):
     :param proxy:
     :return:
     """
-    protocol = ['http', 'https', 'socks', 'socks5']
-    flag = proxy.protocol in protocol
-    ip_regex = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    _ip = findall(ip_regex, proxy.ip)
-    flag = flag and (len(_ip) == 1 and _ip[0] == proxy.ip)
-    port_regex = r"\d{1,5}"
-    _port = findall(port_regex, proxy.port)
-    flag = flag and (len(_port) == 1 and _port[0] == proxy.port)
-    return flag
+    return True
+    # try:
+    #     protocols = ['HTTP', 'HTTPS', 'SOCKS4', 'SOCKS5']
+    #     parsed = urlparse(proxy.url)
+    #     flag = parsed.scheme.upper() in protocols
+    #     ip_regex = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    #     _ip = findall(ip_regex, parsed.hostname)
+    #     flag = flag and (len(_ip) == 1 and _ip[0] == parsed.hostname)
+    #     port_regex = r"\d{1,5}"
+    #     _port = findall(port_regex, str(parsed.port))
+    #     flag = flag and (len(_port) == 1 and _port[0] == parsed.port)
+    #     return flag
+    # except Exception as e:
+    #     logger.warning(f'{proxy.url}--{e}')
 
 
 @validator
@@ -42,10 +51,7 @@ def timeOutValidator(proxy):
     :return:
     """
 
-    proxies = {
-        "http": f"{proxy.protocol}://{proxy.ip}:{proxy.port}",
-        "https": f"{proxy.protocol}://{proxy.ip}:{proxy.port}",
-    }
+    proxies = {"http": proxy.url, "https": proxy.url}
     # if proxy_type in ('socks', 'socks5'):
     #     # proxies = {"http": "http://{proxy}".format(proxy=proxy), "https": "https://{proxy}".format(proxy=proxy)}
     #     proxies = {'http': f'socks5h://{proxy}', 'https': f'socks5h://{proxy}'}
@@ -57,7 +63,11 @@ def timeOutValidator(proxy):
                'Connection': 'keep-alive',
                'Accept-Language': 'zh-CN,zh;q=0.9'}
     try:
-        r = requests.head(conf.verifyUrl, headers=headers, proxies=proxies, timeout=conf.verifyTimeout, verify=False)
+        r = requests.head(VERIFY_URL[proxy.tag],
+                          headers=headers,
+                          proxies=proxies,
+                          timeout=conf.verifyTimeout,
+                          verify=False)
         if r.status_code == 200:
             return True
     except Exception as e:

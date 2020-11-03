@@ -30,5 +30,22 @@ def testProxyClass():
     print(Proxy.createFromJson(proxy_str).to_dict)
 
 
+def testProxyClass1():
+    proxy = Proxy("https://127.0.0.1:8080")
+
+    print(proxy.to_json)
+
+    proxy.score = 10
+    proxy.proxy_type = "test"
+    proxy.tag = "高匿"
+
+    proxy_str = json.dumps(proxy.to_dict, ensure_ascii=False)
+
+    print(proxy_str)
+
+    print(Proxy.createFromJson(proxy_str).to_dict)
+
+
 if __name__ == '__main__':
-    testProxyClass()
+    # testProxyClass()
+    testProxyClass1()

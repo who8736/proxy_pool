@@ -20,6 +20,7 @@ import base64
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
+from setting import VERIFY_URL, PROXY_SCORE_INIT, MAINPROXY
 
 class ProxyFetcher(object):
     """
@@ -47,12 +48,13 @@ class ProxyFetcher(object):
                     ip = ul.xpath('./span[1]/li/text()')[0]
                     classnames = ul.xpath('./span[2]/li/attribute::class')[0]
                     classname = classnames.split(' ')[1]
+                    protocol = ul.xpath('./span[4]/li/text()')[0]
                     port_sum = 0
                     for c in classname:
                         port_sum *= 10
                         port_sum += key.index(c)
                     port = port_sum >> 3
-                    yield '{}:{}'.format(ip, port)
+                    yield f'{protocol}://{ip}:{port}'
                 except Exception as e:
                     print(e)
 
@@ -334,8 +336,8 @@ class ProxyFetcher(object):
     @staticmethod
     def freeProxy16():
         print('-'*30, 'start freeProxyFetch16', '-' * 30)
-        proxy = '127.0.0.1:10802'
-        proxies = {'http': proxy, 'https': proxy}
+        proxy = 'socks5://127.0.0.1:10808'
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
         HEADERS = {
             'User-Agent': """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"""}
         urls = [
@@ -352,7 +354,7 @@ class ProxyFetcher(object):
                 try:
                     r = requests.get(url, proxies=proxies, timeout=10,
                                      headers=HEADERS)
-                    print(r.text)
+                    # print(r.text)
                     retry = 0
                 except Exception as e:
                     print(e)
@@ -370,7 +372,7 @@ class ProxyFetcher(object):
                         protocol = r.xpath('./td[3]/small/text()')[0]
                         # port = r.xpath('./td[2]')
                         # print(ip, port)
-                        print(protocol, ip, port)
-                        yield Proxy(f'{ip}:{port}', protocol=protocol)
+                        # print(protocol, ip, port)
+                        yield f'{protocol}://{ip}:{port}'
                     except Exception as e:
                         print(e)

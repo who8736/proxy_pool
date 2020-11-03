@@ -50,7 +50,7 @@ class ProxyHandler(object):
         put proxy into use proxy
         :return:
         """
-        self.db.put(proxy.to_json)
+        self.db.put(proxy)
 
     def delete(self, proxy):
         """
@@ -58,7 +58,7 @@ class ProxyHandler(object):
         :param proxy:
         :return:
         """
-        return self.db.delete(proxy.to_json)
+        return self.db.delete(proxy)
 
     def getAll(self):
         """
@@ -74,7 +74,7 @@ class ProxyHandler(object):
         :param proxy:
         :return:
         """
-        return self.db.exists(proxy.to_json)
+        return self.db.exists(proxy)
 
     def getCount(self):
         """
@@ -83,3 +83,11 @@ class ProxyHandler(object):
         """
         total_use_proxy = self.db.getCount()
         return {'count': total_use_proxy}
+
+    def addScore(self, proxy):
+        # TODO: 加分
+        pass
+
+    def subScore(self, proxy):
+        # TODO: 加分
+        pass

@@ -22,22 +22,22 @@ from helper.check import runChecker
 from handler.logHandler import LogHandler
 from handler.proxyHandler import ProxyHandler
 from handler.configHandler import ConfigHandler
-
+from db.sqlClient import SqlClient
 
 def runProxyFetch():
     proxy_queue = Queue()
 
     for proxy in runFetcher():
-        proxy_queue.put(Proxy(proxy).to_json)
+        proxy_queue.put(proxy)
 
     runChecker("raw", proxy_queue)
 
 
 def runProxyCheck():
     proxy_queue = Queue()
-
-    for proxy in ProxyHandler().getAll():
-        proxy_queue.put(proxy.to_json)
+    dbclient = SqlClient()
+    for proxy in dbclient.getAll():
+        proxy_queue.put(proxy)
 
     runChecker("use", proxy_queue)
 

@@ -21,6 +21,11 @@ from util.validators import validators
 from handler.logHandler import LogHandler
 from handler.proxyHandler import ProxyHandler
 from handler.configHandler import ConfigHandler
+from db.sqlClient import SqlClient
+from setting import (PROXY_SCORE_INIT, PROXY_SCORE_MAX, PROXY_SCORE_MIN,
+                     PROXY_SCORE_PER,
+                     THREADCNT,
+                     )
 
 
 def proxyCheck(proxy):
@@ -29,24 +34,10 @@ def proxyCheck(proxy):
     :param proxy: Proxy object
     :return: Proxy object, status
     """
-
-    def __proxyCheck(_proxy):
-        for func in validators:
-            if not func(_proxy):
-                return False
-        return True
-
-    if __proxyCheck(proxy):
-        # 检测通过 更新proxy属性
-        proxy.last_status = 1
-        if proxy.fail_count > 0:
-            proxy.fail_count -= 1
-    else:
-        proxy.last_status = 0
-        proxy.fail_count += 1
-    proxy.check_count += 1
-    proxy.last_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return proxy
+    for func in validators:
+        if not func(proxy):
+            return False
+    return True
 
 
 class Checker(Thread):
@@ -58,44 +49,38 @@ class Checker(Thread):
         Thread.__init__(self, name=thread_name)
         self.type = check_type
         self.log = LogHandler("checker")
-        self.proxy_handler = ProxyHandler()
+        # self.proxy_handler = ProxyHandler()
         self.queue = queue
-        self.conf = ConfigHandler()
+        # self.conf = ConfigHandler()
+        self.db = SqlClient()
 
     def run(self):
         self.log.info(f"ProxyCheck - {self.name}  : start")
         while True:
             try:
-                proxy_json = self.queue.get(block=False)
+                proxy = self.queue.get(block=False)
             except Empty:
                 self.log.info(f"ProxyCheck - {self.name}  : complete")
                 break
 
-            proxy = Proxy.createFromJson(proxy_json)
-            proxy = proxyCheck(proxy)
-            loghead = f'ProxyCheck - {self.name}  : {proxy.str} '
+            result = proxyCheck(proxy)
+            loghead = f'ProxyCheck - {self.name}  : {proxy.url}->{proxy.tag} '
             if self.type == "raw":
-                if proxy.last_status:
-                    if self.proxy_handler.exists(proxy):
+                if result:
+                    if self.db.exists(proxy):
                         self.log.info(f'{loghead} exists')
                     else:
                         self.log.info(f'{loghead} success')
-                        self.proxy_handler.put(proxy)
+                        self.db.put(proxy)
                 else:
                     self.log.info(f'{loghead} fail')
             else:
-                if proxy.last_status:
-                    self.log.info(f'{loghead} pass')
-                    self.proxy_handler.put(proxy)
+                if result:
+                    self.log.info(f'{loghead} pass, increase score')
+                    self.db.increase(proxy, PROXY_SCORE_PER)
                 else:
-                    if proxy.fail_count > self.conf.maxFailCount:
-                        self.log.info(f'{loghead} fail, '
-                                      f'count {proxy.fail_count} delete')
-                        self.proxy_handler.delete(proxy)
-                    else:
-                        self.log.info(f'{loghead} fail, '
-                                      f'count {proxy.fail_count} keep')
-                        self.proxy_handler.put(proxy)
+                    self.log.info(f'{loghead} fail, decrease score')
+                    self.db.decrease(proxy, PROXY_SCORE_PER)
             self.queue.task_done()
 
 
@@ -107,7 +92,7 @@ def runChecker(tp, queue):
     :return:
     """
     thread_list = list()
-    for index in range(20):
+    for index in range(THREADCNT):
         thread_list.append(Checker(tp, queue, f"thread_{index:02}"))
 
     for thread in thread_list:

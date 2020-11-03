@@ -16,6 +16,8 @@ from handler.logHandler import LogHandler
 from handler.proxyHandler import ProxyHandler
 from fetcher.proxyFetcher import ProxyFetcher
 from handler.configHandler import ConfigHandler
+from setting import VERIFY_URL, PROXY_SCORE_INIT
+from helper.proxy import Proxy
 
 
 class Fetcher(object):
@@ -44,15 +46,16 @@ class Fetcher(object):
                 continue
 
             try:
-                for proxy in fetcher():
-                    if proxy in proxy_set:
-                        self.log.info(f'ProxyFetch - {fetch_name}: {proxy.protocol}://{proxy.ip}:{proxy.port} exist')
-                        continue
-                    else:
-                        self.log.info(f'ProxyFetch - {fetch_name}: {proxy.protocol}://{proxy.ip}:{proxy.port} success')
-                        # self.log.info('ProxyFetch - %s: %s success' % (fetch_name, proxy.ljust(23)))
-                    if proxy.strip():
-                        proxy_set.add(proxy)
+                for url in fetcher():
+                    for tag in VERIFY_URL.keys():
+                        proxy = Proxy(url, tag=tag)
+                        if proxy in proxy_set:
+                            self.log.info(f'ProxyFetch - {fetch_name}: {proxy.url}->{proxy.tag} exist')
+                            continue
+                        else:
+                            self.log.info(f'ProxyFetch - {fetch_name}: {proxy.url}->{proxy.tag} success')
+                            # self.log.info('ProxyFetch - %s: %s success' % (fetch_name, proxy.ljust(23)))
+                            proxy_set.add(proxy)
             except Exception as e:
                 self.log.error("ProxyFetch - {func}: error".format(func=fetch_name))
                 self.log.error(str(e))

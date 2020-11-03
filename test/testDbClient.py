@@ -13,7 +13,8 @@
 __author__ = 'JHao'
 
 from db.dbClient import DbClient
-
+from db.sqlClient import SqlClient
+from helper.proxy import Proxy
 
 def testDbClient():
     #  ############### ssdb ###############
@@ -35,5 +36,24 @@ def testDbClient():
     print("DbClient ok!")
 
 
+def testMysqlClient():
+    db = SqlClient()
+    proxy = Proxy('socks://127.0.0.1:1000', tag='test')
+
+    # 增加
+    # db.put(proxy)
+
+    # 取一个
+    # geted = db.get()
+    # print(geted)
+
+    # 删除
+    db.delete(proxy)
+
+
 if __name__ == '__main__':
-    testDbClient()
+    pass
+
+    # testDbClient()
+
+    testMysqlClient()
