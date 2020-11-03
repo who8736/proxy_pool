@@ -13,8 +13,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import pandas as pd
 # from initlog import initlog
 # import config
-from setting import (SQLHOST, SQLUSER, SQLPASSWORD, SQLSCHEMA,
-                     PROXY_SCORE_MIN, PROXY_SCORE_MAX, PROXY_SCORE_INIT,
+from dbsetting import SQLHOST, SQLUSER, SQLPASSWORD, SQLSCHEMA
+from setting import (PROXY_SCORE_MIN, PROXY_SCORE_MAX, PROXY_SCORE_INIT,
                      PROXY_SCORE_PER, PROXY_SCORE_SELECT)
 from helper.proxy import Proxy
 
