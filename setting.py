@@ -108,5 +108,20 @@ PROXY_SCORE_PER = 10
 PROXY_SCORE_SELECT = 10
 
 # ############# v2ray config #################
-V2RAYPATH = 'D:\\setup files\\v2ray-windows-64'
+V2RAYPATH = 'D:\\v2ray-windows-64'
+V2RAYSUBSCRIPTION = [
+    'https://raw.fastgit.org/ntkernel/lantern/master/vmess_base64.txt',
+]
+V2RAYVERIFYURL = 'https://www.google.com'
 
+# ############# mysql config #################
+SQLHOST = '127.0.0.1'
+SQLUSER = 'root'
+SQLPASSWORD = 'root'
+SQLSCHEMA = 'proxy'
+
+# ############# private config #################
+if os.path.isfile(os.path.join(ROOT_PATH, 'private', 'setting.py')):
+    # print('import private')
+    from private.setting import *
+    # print(SQLPASSWORD)

@@ -15,6 +15,7 @@ __author__ = 'JHao'
 from db.dbClient import DbClient
 from db.sqlClient import SqlClient
 from helper.proxy import Proxy
+from setting import SQLPASSWORD
 
 def testDbClient():
     #  ############### ssdb ###############
@@ -44,16 +45,17 @@ def testMysqlClient():
     # db.put(proxy)
 
     # 取一个
-    # geted = db.get()
-    # print(geted)
+    geted = db.get('default')
+    print(geted)
 
     # 删除
-    db.delete(proxy)
+    # db.delete(proxy)
 
 
 if __name__ == '__main__':
     pass
 
     # testDbClient()
-
+    # import setting
+    print(SQLPASSWORD)
     testMysqlClient()

@@ -3,11 +3,13 @@ import socket
 from base64 import b64decode, b64encode
 import json
 import os
-from setting import ROOT_PATH
+from setting import ROOT_PATH, V2RAYPATH, V2RAYVERIFYURL
+import random
+from threading import Thread
+from queue import Queue
+import subprocess
 
-SUBSCRIPTION = [
-    'https://raw.fastgit.org/ntkernel/lantern/master/vmess_base64.txt',
-]
+from util.webRequest import WebRequest
 
 
 def getSub():
@@ -79,30 +81,70 @@ def genV2rayConifg(node, filename, inport=1080):
 
     # print(config)
     with open(filename, 'w', encoding='utf8') as f:
-        print('save file:', filename)
+        # print('save file:', filename)
         json.dump(config, f)
 
 
-def getV2rayPort(startPort=26000, stopPort=27000):
-    sock = socket.socket()
-    sock.bind(('', 0))
-    ip, port = sock.getnameinfo()
-    print(port)
-    sock.close()
+def getV2rayPort(port=26520):
+    while port_in_use(port):
+        port += 1
     return port
+
+
+def port_in_use(port):
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        s.connect(('127.0.0.1', port))
+        return True
+    except socket.error:
+        return False
+    finally:
+        if s:
+            s.close()
+
+
+def runClient(filename):
+    v2raycmd = os.path.join(V2RAYPATH, 'v2ray.exe')
+    cmd = f'"{v2raycmd}" -config {filename}'
+    print(cmd)
+    subprocess.run(cmd)
+
+
+class V2rayClient(Thread):
+    def __init__(self, filename):
+        Thread.__init__(self)
+        self.filename = filename
+        pass
+
+    def run(self):
+        runClient(self.filename)
+
+
+def v2rayChecker(inport):
+    pass
+    proxies = {
+        'http': f'socks5://127.0.0.1:{inport}',
+        'https': f'socks5://127.0.0.1:{inport}',
+    }
+    res = WebRequest().get(V2RAYVERIFYURL, proxies=proxies)
+    return res.response.status_code == '200'
 
 
 if __name__ == '__main__':
     pass
+    # writeFile()
+
     # a = list(readFile())[0]
     # print('-' * 80)
     # print(a)
 
     # 生成配置文件
-    # filename = os.path.join(ROOT_PATH, 'config1.json')
+    # filename = os.path.join(ROOT_PATH, 'tmp', 'config1.json')
     # print('save file:', filename)
     # node = list(readFile())[0]
-    # genV2rayConifg(node, filename=filename, inport=10803)
+    # genV2rayConifg(node, filename=filename, inport=26520)
 
     # url = 'ew0KICAidiI6ICIyIiwNCiAgInBzIjogImdpdGh1Yi5jb20vZnJlZWZxIC0g576O5Zu95YaF5Y2O6L6+5bee5ouJ5pav57u05Yqg5pavQnV5Vk0yMjkiLA0KICAiYWRkIjogIm1nYS5jZW50b3M4LmNsb3VkIiwNCiAgInBvcnQiOiAiNDQzIiwNCiAgImlkIjogIjliZjBiMmExLWY4OTAtM2Q3OS1iYTBiLTBhYTM1YTA0ZDhkNSIsDQogICJhaWQiOiAiMTYiLA0KICAibmV0IjogIndzIiwNCiAgInR5cGUiOiAibm9uZSIsDQogICJob3N0IjogIm1nYS5jZW50b3M4LmNsb3VkIiwNCiAgInBhdGgiOiAiL21vdmllIiwNCiAgInRscyI6ICJ0bHMiDQp9'
     # nodeStr = b64decode(url).decode('utf8')
@@ -110,5 +152,14 @@ if __name__ == '__main__':
     # print(node)
 
     # 获取空端口
-    getV2rayPort()
+    # port = 10801
+    # while port <= 10820:
+    #     # port = getV2rayPort(port)
+    #     flag = check_port_in_use(port)
+    #     print(port, flag)
+    #     port += 1
 
+    # 运行客户端
+    filename = os.path.join(ROOT_PATH, 'tmp', 'config1.json')
+    print(filename)
+    runClient(filename)
