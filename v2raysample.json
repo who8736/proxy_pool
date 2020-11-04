@@ -32,22 +32,6 @@
         "decryption": null
       },
       "streamSettings": null
-    },
-    {
-      "tag": "api",
-      "port": 63952,
-      "listen": "127.0.0.1",
-      "protocol": "dokodemo-door",
-      "sniffing": null,
-      "settings": {
-        "auth": null,
-        "udp": false,
-        "ip": null,
-        "address": "127.0.0.1",
-        "clients": null,
-        "decryption": null
-      },
-      "streamSettings": null
     }
   ],
   "outbounds": [
