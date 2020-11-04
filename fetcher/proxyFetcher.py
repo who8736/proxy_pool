@@ -17,10 +17,12 @@ from time import sleep
 import requests
 from lxml import etree
 import base64
+from random import choice
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
-from setting import VERIFY_URL, PROXY_SCORE_INIT, MAINPROXY
+from setting import VERIFY_URL, PROXY_SCORE_INIT, MAINPROXY, UA
+
 
 class ProxyFetcher(object):
     """
@@ -67,8 +69,7 @@ class ProxyFetcher(object):
         """
         urls = [
             "http://www.66ip.cn/mo.php?sxb=&tqsl={}&port=&export=&ktip=&sxa=&submit=%CC%E1++%C8%A1&textarea=",
-            "http://www.66ip.cn/nmtq.php?getnum={}&isp=0&anonymoustype=0&s"
-            "tart=&ports=&export=&ipaddress=&area=0&proxytype=2&api=66ip"
+            "http://www.66ip.cn/nmtq.php?getnum={}&isp=0&anonymoustype=0&start=&ports=&export=&ipaddress=&area=0&proxytype=2&api=66ip"
         ]
 
         try:
@@ -336,10 +337,8 @@ class ProxyFetcher(object):
     @staticmethod
     def freeProxy16():
         print('-'*30, 'start freeProxyFetch16', '-' * 30)
-        proxy = 'socks5://127.0.0.1:10808'
         proxies = {'http': MAINPROXY, 'https': MAINPROXY}
-        HEADERS = {
-            'User-Agent': """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"""}
+        HEADERS = {'User-Agent': choice(UA)}
         urls = [
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
@@ -376,3 +375,54 @@ class ProxyFetcher(object):
                         yield f'{protocol}://{ip}:{port}'
                     except Exception as e:
                         print(e)
+
+    @staticmethod
+    def freeProxy17():
+        urls = [
+            'http://free-proxy.cz/',
+            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
+            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
+            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/3',
+            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/4',
+            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/5',
+        ]
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        for url in urls:
+            tree = WebRequest().get(url, proxies=proxies).tree
+            if tree is None:
+                return None
+            ret = tree.xpath('//*[@id="proxy_list"]/tbody/tr')
+            for r in ret:
+                try:
+                    ip_script = r.xpath('./td[1]/script/text()')[0]
+                    ip_base64 = re.search('(?:")([\w=]+)(?:")',
+                                          ip_script).groups()[0]
+                    ip = base64.b64decode(ip_base64).decode('utf8')
+                    port = r.xpath('./td[2]/span/text()')[0]
+                    protocol = r.xpath('./td[3]/small/text()')[0]
+                    yield f'{protocol}://{ip}:{port}'
+                except Exception as e:
+                    print(e)
+
+    @staticmethod
+    def freeProxy18():
+        urls = [
+            'https://spys.one/en/free-proxy-list/',
+        ]
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        for url in urls:
+            tree = WebRequest().get(url, proxies=proxies).tree
+            if tree is None:
+                return None
+            ret = tree.xpath('//*[@id="proxy_list"]/tbody/tr')
+            for r in ret:
+                try:
+                    ip_script = r.xpath('./td[1]/script/text()')[0]
+                    ip_base64 = re.search('(?:")([\w=]+)(?:")',
+                                          ip_script).groups()[0]
+                    ip = base64.b64decode(ip_base64).decode('utf8')
+                    port = r.xpath('./td[2]/span/text()')[0]
+                    protocol = r.xpath('./td[3]/small/text()')[0]
+                    yield f'{protocol}://{ip}:{port}'
+                except Exception as e:
+                    print(e)

@@ -1,0 +1,155 @@
+{
+  "policy": {
+    "system": {
+      "statsInboundUplink": true,
+      "statsInboundDownlink": true
+    }
+  },
+  "log": {
+    "access": "",
+    "error": "",
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "proxy",
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      },
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "ip": null,
+        "address": null,
+        "clients": null,
+        "decryption": null
+      },
+      "streamSettings": null
+    },
+    {
+      "tag": "api",
+      "port": 63952,
+      "listen": "127.0.0.1",
+      "protocol": "dokodemo-door",
+      "sniffing": null,
+      "settings": {
+        "auth": null,
+        "udp": false,
+        "ip": null,
+        "address": "127.0.0.1",
+        "clients": null,
+        "decryption": null
+      },
+      "streamSettings": null
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "mga.centos8.cloud",
+            "port": 443,
+            "users": [
+              {
+                "id": "9bf0b2a1-f890-3d79-ba0b-0aa35a04d8d5",
+                "alterId": 16,
+                "email": "t@t.tt",
+                "security": "auto",
+                "encryption": null,
+                "flow": null
+              }
+            ]
+          }
+        ],
+        "servers": null,
+        "response": null
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "allowInsecure": false,
+          "serverName": "mga.centos8.cloud"
+        },
+        "tcpSettings": null,
+        "kcpSettings": null,
+        "wsSettings": {
+          "connectionReuse": true,
+          "path": "/movie",
+          "headers": {
+            "Host": "mga.centos8.cloud"
+          }
+        },
+        "httpSettings": null,
+        "quicSettings": null,
+        "xtlsSettings": null
+      },
+      "mux": {
+        "enabled": false,
+        "concurrency": -1
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "vnext": null,
+        "servers": null,
+        "response": null
+      },
+      "streamSettings": null,
+      "mux": null
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole",
+      "settings": {
+        "vnext": null,
+        "servers": null,
+        "response": {
+          "type": "http"
+        }
+      },
+      "streamSettings": null,
+      "mux": null
+    }
+  ],
+  "stats": {},
+  "api": {
+    "tag": "api",
+    "services": [
+      "StatsService"
+    ]
+  },
+  "dns": {
+    "servers": [
+      "8.8.8.8",
+      "8.8.4.4"
+    ]
+  },
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "port": null,
+        "inboundTag": [
+          "api"
+        ],
+        "outboundTag": "api",
+        "ip": null,
+        "domain": null
+      }
+    ]
+  }
+}
