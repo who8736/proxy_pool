@@ -4,11 +4,12 @@ import socket
 from base64 import b64decode, b64encode
 import json
 import os
-from setting import ROOT_PATH, V2RAYPATH, V2RAYVERIFYURL
+from setting import ROOT_PATH, V2RAYPATH, V2RAYVERIFYURL, V2RAYSUBSCRIPTION
 import random
 from threading import Thread
 from queue import Queue
 import subprocess
+import signal
 
 from util.webRequest import WebRequest
 
@@ -16,7 +17,7 @@ from util.webRequest import WebRequest
 def getSub():
     """订阅节点"""
     nodes = []
-    for url in SUBSCRIPTION:
+    for url in V2RAYSUBSCRIPTION:
         response = requests.get(url)
         # print(response.text.strip())
         # print(response.content)
@@ -108,16 +109,34 @@ def port_in_use(port):
 
 class V2rayClient(Thread):
     """以线程运行v2ray客户端"""
+
     def __init__(self, filename):
         Thread.__init__(self)
         self.filename = filename
+        self.p = None
         pass
 
     def run(self):
         v2raycmd = os.path.join(V2RAYPATH, 'v2ray.exe')
         cmd = f'"{v2raycmd}" -config {self.filename}'
         print(cmd)
-        subprocess.run(cmd)
+        # subprocess.run(cmd)
+        self.p = subprocess.Popen([v2raycmd, '-config', self.filename],
+                                  close_fds=True,
+                                  # preexec_fn=os.setsid,
+                                  )
+        print('启动进程:', self.p.pid)
+
+    def close(self):
+        # p.kill() #无法杀掉所有子进程，只能杀掉子shell的进程
+
+        # p.terminate()  #无法杀掉所有子进程
+        print('结束进程:', self.p.pid)
+        # os.killpg(self.p.pid, signal.SIGUSR1)
+        # os.kill(self.p.pid, signal.CTRL_C_EVENT)
+        # os.kill(self.p.pid, signal.CTRL_BREAK_EVENT)
+        self.p.kill()
+
 
 
 def v2rayChecker(inport):
@@ -137,6 +156,7 @@ def v2rayChecker(inport):
 
 class V2rayDaemon(Thread):
     """以线程运行v2ray客户端"""
+
     def __init__(self, threadId, nodeQueue, portQueue, okQueue):
         Thread.__init__(self)
         self.threadId = threadId
@@ -146,44 +166,53 @@ class V2rayDaemon(Thread):
         pass
 
     def run(self):
-        node = self.nodeQueue.get()
-        port = self.portQueue.get()
-        filename = os.path.join(ROOT_PATH, 'tmp', f'config{self.threadId}.json')
-        genV2rayConifg(node, port, filename)
-        v2rayClient = V2rayClient(filename)
-        v2rayClient.start()
-        v2rayClient.join(timeout=3)
-        flag = v2rayChecker(port)
-        print(f'port:{port}', flag)
-        if not flag:
-            self.okQueue.put(node)
-        self.portQueue.put(port)
-        sys.exit(-1)
+        while not self.nodeQueue.empty():
+            node = self.nodeQueue.get()
+            port = self.portQueue.get()
+            filename = os.path.join(ROOT_PATH, 'tmp', f'config{self.threadId}.json')
+            genV2rayConifg(node, port, filename)
+            v2rayClient = V2rayClient(filename)
+            v2rayClient.start()
+            v2rayClient.join(timeout=3)
+            flag = v2rayChecker(port)
+            print(f'port:{port}', flag)
+            if flag:
+                self.okQueue.put(node)
+            self.portQueue.put(port)
+            v2rayClient.close()
+
 
 
 def v2rayMainThread():
-    threadNum = 2
+    threadNum = 10
     startPort = 26520
 
     nodeQueue = Queue()
     # for node in readFile():
-    for node in list(readFile())[:1]:
+    for node in readFile():
         nodeQueue.put(node)
+    print('总节点数:', nodeQueue.qsize())
 
     portQueue = Queue()
     for port in range(startPort, startPort + threadNum):
         portQueue.put(port)
 
     okQueue = Queue()
-    while not nodeQueue.empty():
-        th = V2rayDaemon(1, nodeQueue, portQueue, okQueue)
+    threads = []
+    for tid in range(1, threadNum + 1):
+        th = V2rayDaemon(tid, nodeQueue, portQueue, okQueue)
         # th.setDaemon(True)
         th.start()
+        threads.append(th)
+
+    for th in threads:
         th.join()
 
+    print('成功节点数:', okQueue.qsize())
     while not okQueue.empty():
         node = okQueue.get()
         print(node)
+
 
 if __name__ == '__main__':
     pass
