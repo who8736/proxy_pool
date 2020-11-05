@@ -135,7 +135,7 @@
         "domain": null
       }
     ],
-    "balancer": [
+    "balancers": [
       {
         "tag": "balancer",
         "selector": ["proxy"]

@@ -1,4 +1,5 @@
 import sys
+import time
 import requests
 import socket
 from base64 import b64decode, b64encode
@@ -38,6 +39,7 @@ def getSub():
                 print(f'nodeStr:{nodeStr}')
                 print(e)
     return nodes
+    # return nodes[:3]
 
 
 def writeFile():
@@ -107,6 +109,7 @@ def genV2rayConifgPlus(nodes, inport=52026):
         outbound = copy.deepcopy(outbase)
         # 配置代理出口
         outbound['tag'] = f'proxy{proxyid:03}'
+        proxyid += 1
         vnext = [{
             'address': node['add'],
             'port': int(node['port']),
@@ -166,15 +169,22 @@ class V2rayClient(Thread):
         Thread.__init__(self)
         self.filename = filename
         self.p = None
-        pass
 
     def run(self):
         v2raycmd = os.path.join(V2RAYPATH, 'v2ray.exe')
         cmd = f'"{v2raycmd}" -config {self.filename}'
         print(cmd)
         # subprocess.run(cmd)
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
         self.p = subprocess.Popen([v2raycmd, '-config', self.filename],
                                   close_fds=True,
+                                  shell=False,
+                                  stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  startupinfo=startupinfo,
                                   # preexec_fn=os.setsid,
                                   )
         print('启动进程:', self.p.pid)
@@ -225,12 +235,13 @@ class V2rayDaemon(Thread):
             genV2rayConifg(node, port, filename)
             v2rayClient = V2rayClient(filename)
             v2rayClient.start()
-            v2rayClient.join(timeout=3)
+            v2rayClient.join(timeout=2)
             flag = v2rayChecker(port)
             print(f'port:{port}', flag)
             if flag:
                 self.okQueue.put(node)
             self.portQueue.put(port)
+            # time.sleep(10)
             v2rayClient.close()
 
 
@@ -264,6 +275,7 @@ def v2rayMainChecker():
         print(node)
 
     return okNodes
+
 
 if __name__ == '__main__':
     pass
@@ -299,7 +311,8 @@ if __name__ == '__main__':
 
     # 检测节点并保存
     # okNodes = v2rayMainChecker()
-    # with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'w', encoding='utf8') as f:
+    # with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'w',
+    #           encoding='utf8') as f:
     #     json.dump(okNodes, f)
 
     # 订阅节点
