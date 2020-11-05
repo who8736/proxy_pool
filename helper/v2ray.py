@@ -1,3 +1,4 @@
+import sys
 import requests
 import socket
 from base64 import b64decode, b64encode
@@ -47,7 +48,7 @@ def readFile():
             yield node
 
 
-def genV2rayConifg(node, filename, inport=1080):
+def genV2rayConifg(node, inport, filename):
     samplefilename = os.path.join(ROOT_PATH, 'v2raysample.json')
     with open(samplefilename, 'r', encoding='utf8') as f:
         config = json.load(f)
@@ -105,32 +106,84 @@ def port_in_use(port):
             s.close()
 
 
-def runClient(filename):
-    v2raycmd = os.path.join(V2RAYPATH, 'v2ray.exe')
-    cmd = f'"{v2raycmd}" -config {filename}'
-    print(cmd)
-    subprocess.run(cmd)
-
-
 class V2rayClient(Thread):
+    """以线程运行v2ray客户端"""
     def __init__(self, filename):
         Thread.__init__(self)
         self.filename = filename
         pass
 
     def run(self):
-        runClient(self.filename)
+        v2raycmd = os.path.join(V2RAYPATH, 'v2ray.exe')
+        cmd = f'"{v2raycmd}" -config {self.filename}'
+        print(cmd)
+        subprocess.run(cmd)
 
 
 def v2rayChecker(inport):
-    pass
+    """验证v2ray节点
+
+    """
     proxies = {
         'http': f'socks5://127.0.0.1:{inport}',
         'https': f'socks5://127.0.0.1:{inport}',
     }
     res = WebRequest().get(V2RAYVERIFYURL, proxies=proxies)
-    return res.response.status_code == '200'
+    print('response.status_code:', res.response.status_code)
+    print('response.status_code type:', type(res.response.status_code))
+    # print(res.response.text)
+    return res.response.status_code == 200
 
+
+class V2rayDaemon(Thread):
+    """以线程运行v2ray客户端"""
+    def __init__(self, threadId, nodeQueue, portQueue, okQueue):
+        Thread.__init__(self)
+        self.threadId = threadId
+        self.nodeQueue = nodeQueue
+        self.portQueue = portQueue
+        self.okQueue = okQueue
+        pass
+
+    def run(self):
+        node = self.nodeQueue.get()
+        port = self.portQueue.get()
+        filename = os.path.join(ROOT_PATH, 'tmp', f'config{self.threadId}.json')
+        genV2rayConifg(node, port, filename)
+        v2rayClient = V2rayClient(filename)
+        v2rayClient.start()
+        v2rayClient.join(timeout=3)
+        flag = v2rayChecker(port)
+        print(f'port:{port}', flag)
+        if not flag:
+            self.okQueue.put(node)
+        self.portQueue.put(port)
+        sys.exit(-1)
+
+
+def v2rayMainThread():
+    threadNum = 2
+    startPort = 26520
+
+    nodeQueue = Queue()
+    # for node in readFile():
+    for node in list(readFile())[:1]:
+        nodeQueue.put(node)
+
+    portQueue = Queue()
+    for port in range(startPort, startPort + threadNum):
+        portQueue.put(port)
+
+    okQueue = Queue()
+    while not nodeQueue.empty():
+        th = V2rayDaemon(1, nodeQueue, portQueue, okQueue)
+        # th.setDaemon(True)
+        th.start()
+        th.join()
+
+    while not okQueue.empty():
+        node = okQueue.get()
+        print(node)
 
 if __name__ == '__main__':
     pass
@@ -160,6 +213,8 @@ if __name__ == '__main__':
     #     port += 1
 
     # 运行客户端
-    filename = os.path.join(ROOT_PATH, 'tmp', 'config1.json')
-    print(filename)
-    runClient(filename)
+    # filename = os.path.join(ROOT_PATH, 'tmp', 'config1.json')
+    # print(filename)
+    # runClient(filename)
+
+    v2rayMainThread()
