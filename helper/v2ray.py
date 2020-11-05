@@ -3,13 +3,14 @@ import requests
 import socket
 from base64 import b64decode, b64encode
 import json
+import copy
 import os
-from setting import ROOT_PATH, V2RAYPATH, V2RAYVERIFYURL, V2RAYSUBSCRIPTION
+from setting import (ROOT_PATH, V2RAYPATH, V2RAYVERIFYURL, V2RAYSUBSCRIPTION,
+                     V2RAYSTARTPORT, V2RAYTHREADNUM)
 import random
 from threading import Thread
 from queue import Queue
 import subprocess
-import signal
 
 from util.webRequest import WebRequest
 
@@ -17,6 +18,7 @@ from util.webRequest import WebRequest
 def getSub():
     """订阅节点"""
     nodes = []
+    ips = set()
     for url in V2RAYSUBSCRIPTION:
         response = requests.get(url)
         # print(response.text.strip())
@@ -27,8 +29,14 @@ def getSub():
         for nodebase64 in nodesStr.split('\n'):
             nodebase64 = nodebase64[8:]
             nodeStr = b64decode(nodebase64).decode('utf8')
-            node = json.loads(nodeStr)
-            nodes.append(node)
+            try:
+                node = json.loads(nodeStr)
+                if node['add'] not in ips:
+                    nodes.append(node)
+                    ips.add(node['add'])
+            except Exception as e:
+                print(f'nodeStr:{nodeStr}')
+                print(e)
     return nodes
 
 
@@ -87,6 +95,50 @@ def genV2rayConifg(node, inport, filename):
         json.dump(config, f)
 
 
+def genV2rayConifgPlus(nodes, inport=52026):
+    samplefilename = os.path.join(ROOT_PATH, 'v2raysample.json')
+    with open(samplefilename, 'r', encoding='utf8') as f:
+        config = json.load(f)
+
+    outbase = copy.deepcopy(config['outbounds'][0])
+    config['outbounds'].clear()
+    proxyid = 0
+    for node in nodes:
+        outbound = copy.deepcopy(outbase)
+        # 配置代理出口
+        outbound['tag'] = f'proxy{proxyid:03}'
+        vnext = [{
+            'address': node['add'],
+            'port': int(node['port']),
+            'users': [{
+                'id': node['id'],
+                'alterId': int(node['aid']),
+                'email': 'f@f.ff',
+                'security': 'auto',
+                'encryption': None,
+                'flow': None
+            }]
+        }]
+        outbound['settings']['vnext'] = vnext
+        outstream = outbound['streamSettings']
+        outstream['network'] = node['net']
+        outstream['security'] = node['tls']
+        outstream['tlsSettings']['serverName'] = node['host']
+        outstream['wsSettings']['path'] = node['path']
+        outstream['wsSettings']['headers']['Host'] = node['host']
+        outbound['streamSettings'] = outstream
+        config['outbounds'].append(outbound)
+
+    # 配置代理入口
+    config['inbounds'][0]['port'] = inport
+
+    # print(config)
+    filename = os.path.join(V2RAYPATH, 'configplus.json')
+    with open(filename, 'w', encoding='utf8') as f:
+        # print('save file:', filename)
+        json.dump(config, f)
+
+
 def getV2rayPort(port=26520):
     while port_in_use(port):
         port += 1
@@ -138,7 +190,6 @@ class V2rayClient(Thread):
         self.p.kill()
 
 
-
 def v2rayChecker(inport):
     """验证v2ray节点
 
@@ -169,7 +220,8 @@ class V2rayDaemon(Thread):
         while not self.nodeQueue.empty():
             node = self.nodeQueue.get()
             port = self.portQueue.get()
-            filename = os.path.join(ROOT_PATH, 'tmp', f'config{self.threadId}.json')
+            filename = os.path.join(ROOT_PATH, 'tmp',
+                                    f'config{self.threadId}.json')
             genV2rayConifg(node, port, filename)
             v2rayClient = V2rayClient(filename)
             v2rayClient.start()
@@ -182,24 +234,20 @@ class V2rayDaemon(Thread):
             v2rayClient.close()
 
 
-
-def v2rayMainThread():
-    threadNum = 10
-    startPort = 26520
-
+def v2rayMainChecker():
     nodeQueue = Queue()
     # for node in readFile():
-    for node in readFile():
+    for node in getSub():
         nodeQueue.put(node)
     print('总节点数:', nodeQueue.qsize())
 
     portQueue = Queue()
-    for port in range(startPort, startPort + threadNum):
+    for port in range(V2RAYSTARTPORT, V2RAYSTARTPORT + V2RAYTHREADNUM):
         portQueue.put(port)
 
     okQueue = Queue()
     threads = []
-    for tid in range(1, threadNum + 1):
+    for tid in range(1, V2RAYTHREADNUM + 1):
         th = V2rayDaemon(tid, nodeQueue, portQueue, okQueue)
         # th.setDaemon(True)
         th.start()
@@ -209,10 +257,13 @@ def v2rayMainThread():
         th.join()
 
     print('成功节点数:', okQueue.qsize())
+    okNodes = []
     while not okQueue.empty():
         node = okQueue.get()
+        okNodes.append(node)
         print(node)
 
+    return okNodes
 
 if __name__ == '__main__':
     pass
@@ -246,4 +297,18 @@ if __name__ == '__main__':
     # print(filename)
     # runClient(filename)
 
-    v2rayMainThread()
+    # 检测节点并保存
+    # okNodes = v2rayMainChecker()
+    # with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'w', encoding='utf8') as f:
+    #     json.dump(okNodes, f)
+
+    # 订阅节点
+    # nodes = getSub()
+    # for node in nodes:
+    #     print(node)
+    # print(f'总节点:{len(nodes)}')
+
+    # 读取已检测节点并生成增强版配置
+    with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'r', encoding='utf8') as f:
+        okNodes = json.load(f)
+    genV2rayConifgPlus(okNodes)

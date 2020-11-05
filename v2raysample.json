@@ -128,11 +128,17 @@
         "type": "field",
         "port": null,
         "inboundTag": [
-          "api"
+          "proxy"
         ],
-        "outboundTag": "api",
+        "balancerTag": "balancer",
         "ip": null,
         "domain": null
+      }
+    ],
+    "balancer": [
+      {
+        "tag": "balancer",
+        "selector": ["proxy"]
       }
     ]
   }

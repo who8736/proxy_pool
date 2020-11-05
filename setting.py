@@ -111,8 +111,12 @@ PROXY_SCORE_SELECT = 10
 V2RAYPATH = 'D:\\v2ray-windows-64'
 V2RAYSUBSCRIPTION = [
     'https://raw.fastgit.org/ntkernel/lantern/master/vmess_base64.txt',
+    'https://raw.fastgit.org/freefq/free/master/v2',
+    'https://raw.fastgit.org/ssrsub/ssr/master/v2ray',
 ]
 V2RAYVERIFYURL = 'https://www.google.com'
+V2RAYTHREADNUM = 10
+V2RAYSTARTPORT = 26520
 
 # ############# mysql config #################
 SQLHOST = '127.0.0.1'
