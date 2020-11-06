@@ -80,7 +80,7 @@ class WebRequest(object):
                 'Connection': 'keep-alive',
                 'Accept-Language': 'zh-CN,zh;q=0.9'}
 
-    def get(self, url, header=None, proxies=None,
+    def get(self, url, proxies=None,
             retry_time=3, retry_interval=3, timeout=5,
             *args, **kwargs):
         """
@@ -92,14 +92,14 @@ class WebRequest(object):
         :param timeout: network timeout
         :return:
         """
-        headers = self.header
-        if header and isinstance(header, dict):
-            headers.update(header)
+        # headers = self.header
+        # if header and isinstance(header, dict):
+        #     headers.update(header)
         while True:
             try:
                 self.response = requests.get(url,
                                              proxies=proxies,
-                                             headers=headers,
+                                             headers=self.header,
                                              timeout=timeout,
                                              *args, **kwargs)
                 return self
@@ -115,7 +115,7 @@ class WebRequest(object):
 
     @property
     def tree(self):
-        if self.response.status_code == '200':
+        if self.response.status_code == 200:
             return etree.HTML(self.response.content)
 
     @property

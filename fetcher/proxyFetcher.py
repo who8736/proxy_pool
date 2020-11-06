@@ -21,7 +21,7 @@ from random import choice
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
-from setting import VERIFY_URL, PROXY_SCORE_INIT, MAINPROXY, UA
+from setting import VERIFY_URL, PROXY_SCORE_INIT, MAINPROXY
 
 
 class ProxyFetcher(object):
@@ -76,16 +76,19 @@ class ProxyFetcher(object):
             import execjs
             import requests
 
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
-                       'Accept': '*/*',
-                       'Connection': 'keep-alive',
-                       'Accept-Language': 'zh-CN,zh;q=0.8'}
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
+                'Accept': '*/*',
+                'Connection': 'keep-alive',
+                'Accept-Language': 'zh-CN,zh;q=0.8'}
             session = requests.session()
             src = session.get("http://www.66ip.cn/", headers=headers).text
             src = src.split("</script>")[0] + '}'
             src = src.replace("<script>", "function test() {")
-            src = src.replace("while(z++)try{eval(", ';var num=10;while(z++)try{var tmp=')
-            src = src.replace(");break}", ";num--;if(tmp.search('cookie') != -1 | num<0){return tmp}}")
+            src = src.replace("while(z++)try{eval(",
+                              ';var num=10;while(z++)try{var tmp=')
+            src = src.replace(");break}",
+                              ";num--;if(tmp.search('cookie') != -1 | num<0){return tmp}}")
             ctx = execjs.compile(src)
             src = ctx.call("test")
             src = src[src.find("document.cookie="): src.find("};if((")]
@@ -99,8 +102,11 @@ class ProxyFetcher(object):
 
         for url in urls:
             try:
-                html = session.get(url.format(count), cookies={"__jsl_clearance": js_cookie}, headers=headers).text
-                ips = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}", html)
+                html = session.get(url.format(count),
+                                   cookies={"__jsl_clearance": js_cookie},
+                                   headers=headers).text
+                ips = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}",
+                                 html)
                 for ip in ips:
                     yield ip.strip()
             except Exception as e:
@@ -121,7 +127,8 @@ class ProxyFetcher(object):
             for i in range(1, page_count + 1):
                 page_url = each_url + str(i)
                 tree = WebRequest().get(page_url).tree
-                proxy_list = tree.xpath('.//table[@id="ip_list"]//tr[position()>1]')
+                proxy_list = tree.xpath(
+                    './/table[@id="ip_list"]//tr[position()>1]')
                 for proxy in proxy_list:
                     try:
                         yield ':'.join(proxy.xpath('./td/text()')[0:2])
@@ -197,7 +204,11 @@ class ProxyFetcher(object):
             tree = WebRequest().get(url).tree
             proxy_list = tree.xpath('.//table//tr')
             for tr in proxy_list[1:]:
-                yield ':'.join(tr.xpath('./td/text()')[0:2])
+                try:
+                    yield ('http://' + tr.xpath('./td[1]/text()')[0]
+                           + ':' + tr.xpath('./td[2]/a/text()')[0])
+                except IndexError:
+                    continue
 
     @staticmethod
     def freeProxy07():
@@ -209,7 +220,9 @@ class ProxyFetcher(object):
                 "http://www.ip3366.net/free/?stype=2"]
         for url in urls:
             r = WebRequest().get(url, timeout=10)
-            proxies = re.findall(r'<td>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})</td>[\s\S]*?<td>(\d+)</td>', r.text)
+            proxies = re.findall(
+                r'<td>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})</td>[\s\S]*?<td>(\d+)</td>',
+                r.text)
             for proxy in proxies:
                 yield ":".join(proxy)
 
@@ -227,8 +240,9 @@ class ProxyFetcher(object):
         ]
         for url in urls:
             r = WebRequest().get(url, timeout=10)
-            proxies = re.findall(r'<td>\s*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*?</td>[\s\S]*?<td>\s*?(\d+)\s*?</td>',
-                                 r.text)
+            proxies = re.findall(
+                r'<td>\s*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*?</td>[\s\S]*?<td>\s*?(\d+)\s*?</td>',
+                r.text)
             for proxy in proxies:
                 yield ":".join(proxy)
 
@@ -330,13 +344,14 @@ class ProxyFetcher(object):
                 "http://www.xiladaili.com/https/"]
         for url in urls:
             r = WebRequest().get(url, timeout=10)
-            ips = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}", r.text)
+            ips = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}",
+                             r.text)
             for ip in ips:
                 yield ip.strip()
 
     @staticmethod
     def freeProxy16():
-        print('-'*30, 'start freeProxyFetch16', '-' * 30)
+        print('-' * 30, 'start freeProxyFetch16', '-' * 30)
         proxies = {'http': MAINPROXY, 'https': MAINPROXY}
         HEADERS = {'User-Agent': choice(UA)}
         urls = [
@@ -360,15 +375,12 @@ class ProxyFetcher(object):
                     retry -= 1
             if r is not None:
                 html = etree.HTML(r.text)
-                ret = html.xpath('//*[@id="proxy_list"]/tbody/tr')
+                ret = html.xpath('//tr[contains(@class, "spy1x")]')
                 for r in ret:
                     try:
-                        ip_script = r.xpath('./td[1]/script/text()')[0]
-                        ip_base64 = re.search('(?:")([\w=]+)(?:")',
-                                              ip_script).groups()[0]
-                        ip = base64.b64decode(ip_base64).decode('utf8')
+                        ip = r.xpath('./td[1]/font/text()')[0]
                         port = r.xpath('./td[2]/span/text()')[0]
-                        protocol = r.xpath('./td[3]/small/text()')[0]
+                        protocol = ''.join(r.xpath('./td[2]/a/font/text()'))
                         # port = r.xpath('./td[2]')
                         # print(ip, port)
                         # print(protocol, ip, port)

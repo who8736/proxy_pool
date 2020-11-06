@@ -32,7 +32,7 @@ VERSION = "2.1.1"
 HOST = "0.0.0.0"
 
 PORT = 5010
-MAINPROXY = 'socks5://127.0.0.1:10808'
+MAINPROXY = 'socks5://127.0.0.1:52026'
 
 # ############### database config ###################
 # db connection uri
@@ -46,9 +46,9 @@ TABLE_NAME = 'use_proxy'
 
 # ###### config the proxy fetch function ######
 PROXY_FETCHER = [
-    "freeProxy16",
+    # "freeProxy16",
 
-    "freeProxy01",
+    # "freeProxy01",
     # "freeProxy04",
     # "freeProxy05",
     # "freeProxy07",
@@ -58,7 +58,7 @@ PROXY_FETCHER = [
 
     # "freeProxy02",
     # "freeProxy03",
-    # "freeProxy06",
+    "freeProxy06",
     # "freeProxy08",
     # "freeProxy13",
 
@@ -77,7 +77,7 @@ VERIFY_TIMEOUT = 10
 MAX_FAIL_COUNT = 0
 
 # 线程数量
-THREADCNT = 20
+THREADCNT = 1
 # ############# scheduler config #################
 
 # Set the timezone for the scheduler forcely (optional)
@@ -95,8 +95,6 @@ THREADCNT = 20
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(ROOT_PATH, 'log')
 LOG_FORMAT = '%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s'
-
-
 
 # definition of proxy scores
 PROXY_SCORE_MAX = 60

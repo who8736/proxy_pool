@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 from handler.configHandler import ConfigHandler
 from handler.logHandler import LogHandler
 from helper.proxy import Proxy
-from setting import UA, VERIFY_URL
+from setting import VERIFY_URL
+from util.webRequest import WebRequest
 
 conf = ConfigHandler()
 validators = []
@@ -58,17 +59,18 @@ def timeOutValidator(proxy):
     # else:
     #     proxies = {'http': f'http://{proxy}', 'https': f'https://{proxy}'}
     #     # proxies = {"http": "http://{proxy}".format(proxy=proxy), "https": "https://{proxy}".format(proxy=proxy)}
-    headers = {'User-Agent': random.choice(UA),
-               'Accept': '*/*',
-               'Connection': 'keep-alive',
-               'Accept-Language': 'zh-CN,zh;q=0.9'}
+    # headers = {'User-Agent': random.choice(UA),
+    #            'Accept': '*/*',
+    #            'Connection': 'keep-alive',
+    #            'Accept-Language': 'zh-CN,zh;q=0.9'}
     try:
-        r = requests.head(VERIFY_URL[proxy.tag],
-                          headers=headers,
-                          proxies=proxies,
-                          timeout=conf.verifyTimeout,
-                          verify=False)
-        if r.status_code == 200:
+        # r = requests.head(VERIFY_URL[proxy.tag],
+        #                   headers=headers,
+        #                   proxies=proxies,
+        #                   timeout=conf.verifyTimeout,
+        #                   verify=False)
+        r = WebRequest().get(VERIFY_URL[proxy.tag], proxies=proxies)
+        if r.response.status_code == 200:
             return True
     except Exception as e:
         pass
