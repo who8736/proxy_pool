@@ -48,6 +48,11 @@ TABLE_NAME = 'use_proxy'
 PROXY_FETCHER = [
     # 可用
     "freeProxy16",
+    "freeProxy17",
+    "freeProxy18",
+    # "freeProxy19",
+    # "freeProxy20",
+    "freeProxy21",
 
     # 废弃
     # "freeProxy01",
