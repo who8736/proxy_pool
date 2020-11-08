@@ -2,6 +2,7 @@
 
 import requests
 import random
+import re
 from re import findall
 from urllib.parse import urlparse
 from handler.configHandler import ConfigHandler
@@ -51,26 +52,12 @@ def timeOutValidator(proxy):
     :param proxy:
     :return:
     """
-
     proxies = {"http": proxy.url, "https": proxy.url}
-    # if proxy_type in ('socks', 'socks5'):
-    #     # proxies = {"http": "http://{proxy}".format(proxy=proxy), "https": "https://{proxy}".format(proxy=proxy)}
-    #     proxies = {'http': f'socks5h://{proxy}', 'https': f'socks5h://{proxy}'}
-    # else:
-    #     proxies = {'http': f'http://{proxy}', 'https': f'https://{proxy}'}
-    #     # proxies = {"http": "http://{proxy}".format(proxy=proxy), "https": "https://{proxy}".format(proxy=proxy)}
-    # headers = {'User-Agent': random.choice(UA),
-    #            'Accept': '*/*',
-    #            'Connection': 'keep-alive',
-    #            'Accept-Language': 'zh-CN,zh;q=0.9'}
     try:
-        # r = requests.head(VERIFY_URL[proxy.tag],
-        #                   headers=headers,
-        #                   proxies=proxies,
-        #                   timeout=conf.verifyTimeout,
-        #                   verify=False)
-        r = WebRequest().get(VERIFY_URL[proxy.tag], proxies=proxies)
-        if r.response.status_code == 200:
+        r = WebRequest().get(VERIFY_URL[proxy.tag][0], proxies=proxies)
+        verifyFlag = re.search(VERIFY_URL[proxy.tag][1], r.text)
+
+        if r.response.status_code == 200 and verifyFlag:
             return True
     except Exception as e:
         pass

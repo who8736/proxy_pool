@@ -46,8 +46,10 @@ TABLE_NAME = 'use_proxy'
 
 # ###### config the proxy fetch function ######
 PROXY_FETCHER = [
-    # "freeProxy16",
+    # 可用
+    "freeProxy16",
 
+    # 废弃
     # "freeProxy01",
     # "freeProxy04",
     # "freeProxy05",
@@ -58,7 +60,7 @@ PROXY_FETCHER = [
 
     # "freeProxy02",
     # "freeProxy03",
-    "freeProxy06",
+    # "freeProxy06",
     # "freeProxy08",
     # "freeProxy13",
 
@@ -66,8 +68,9 @@ PROXY_FETCHER = [
 
 # ############# proxy validator #################
 VERIFY_URL = {
-    'default': 'http://www.baidu.com',
-    'b47w': 'http://www.b47w.com',
+    'default': ('http://www.baidu.com', 'baidu'),
+    'b47w': ('http://www.b47w.com', 'jav'),
+    'pixhost': ('https://www.pixhost.to/', 'pixhost')
     # 'sukebei': 'https://sukebei.nyaa.si'
 }
 # VERIFY_URL = "https://sukebei.nyaa.si"
@@ -77,7 +80,7 @@ VERIFY_TIMEOUT = 10
 MAX_FAIL_COUNT = 0
 
 # 线程数量
-THREADCNT = 1
+THREADCNT = 20
 # ############# scheduler config #################
 
 # Set the timezone for the scheduler forcely (optional)

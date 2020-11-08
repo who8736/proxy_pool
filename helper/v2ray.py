@@ -310,10 +310,10 @@ if __name__ == '__main__':
     # runClient(filename)
 
     # 检测节点并保存
-    # okNodes = v2rayMainChecker()
-    # with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'w',
-    #           encoding='utf8') as f:
-    #     json.dump(okNodes, f)
+    okNodes = v2rayMainChecker()
+    with open(os.path.join(ROOT_PATH, 'tmp', 'oknodes.json'), 'w',
+              encoding='utf8') as f:
+        json.dump(okNodes, f)
 
     # 订阅节点
     # nodes = getSub()

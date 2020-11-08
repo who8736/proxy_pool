@@ -18,6 +18,7 @@ import requests
 from lxml import etree
 import base64
 from random import choice
+from urllib.parse import unquote
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
@@ -351,9 +352,7 @@ class ProxyFetcher(object):
 
     @staticmethod
     def freeProxy16():
-        print('-' * 30, 'start freeProxyFetch16', '-' * 30)
         proxies = {'http': MAINPROXY, 'https': MAINPROXY}
-        HEADERS = {'User-Agent': choice(UA)}
         urls = [
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
@@ -362,28 +361,17 @@ class ProxyFetcher(object):
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/5',
         ]
         for url in urls:
-            retry = 3
-            r = None
-            while retry > 0:
-                try:
-                    r = requests.get(url, proxies=proxies, timeout=10,
-                                     headers=HEADERS)
-                    # print(r.text)
-                    retry = 0
-                except Exception as e:
-                    print(e)
-                    retry -= 1
-            if r is not None:
-                html = etree.HTML(r.text)
-                ret = html.xpath('//tr[contains(@class, "spy1x")]')
-                for r in ret:
+            r = WebRequest().get(url, proxies=proxies)
+            if r.response.status_code == 200:
+                ret = r.tree
+                for tr in ret.xpath('//table[@id="proxy_list"]//tr')[1:]:
                     try:
-                        ip = r.xpath('./td[1]/font/text()')[0]
-                        port = r.xpath('./td[2]/span/text()')[0]
-                        protocol = ''.join(r.xpath('./td[2]/a/font/text()'))
-                        # port = r.xpath('./td[2]')
-                        # print(ip, port)
-                        # print(protocol, ip, port)
+                        ip_script = tr.xpath('./td[1]/script/text()')[0]
+                        ip_base64 = re.search('(?:")([\w=]+)(?:")',
+                                              ip_script).groups()[0]
+                        ip = base64.b64decode(ip_base64).decode('utf8')
+                        port = tr.xpath('./td[2]/span/text()')[0]
+                        protocol = ''.join(tr.xpath('./td[3]/small/text()'))
                         yield f'{protocol}://{ip}:{port}'
                     except Exception as e:
                         print(e)
@@ -391,27 +379,21 @@ class ProxyFetcher(object):
     @staticmethod
     def freeProxy17():
         urls = [
-            'http://free-proxy.cz/',
-            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
-            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
-            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/3',
-            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/4',
-            # 'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/5',
+            'https://www.proxynova.com/proxy-server-list/elite-proxies/',
         ]
         proxies = {'http': MAINPROXY, 'https': MAINPROXY}
         for url in urls:
             tree = WebRequest().get(url, proxies=proxies).tree
             if tree is None:
                 return None
-            ret = tree.xpath('//*[@id="proxy_list"]/tbody/tr')
+            ret = tree.xpath('//*[@id="tbl_proxy_list"]/tbody/tr')
             for r in ret:
                 try:
-                    ip_script = r.xpath('./td[1]/script/text()')[0]
-                    ip_base64 = re.search('(?:")([\w=]+)(?:")',
+                    ip_script = r.xpath('./td[1]/abbr/script/text()')[0]
+                    ip = re.search('(?:\')(.+)(?:\')',
                                           ip_script).groups()[0]
-                    ip = base64.b64decode(ip_base64).decode('utf8')
-                    port = r.xpath('./td[2]/span/text()')[0]
-                    protocol = r.xpath('./td[3]/small/text()')[0]
+                    port = r.xpath('./td[2]/text()')[0].strip()
+                    protocol = 'https'
                     yield f'{protocol}://{ip}:{port}'
                 except Exception as e:
                     print(e)
@@ -438,3 +420,76 @@ class ProxyFetcher(object):
                     yield f'{protocol}://{ip}:{port}'
                 except Exception as e:
                     print(e)
+
+    @staticmethod
+    def freeProxy19():
+        urls = [
+            'http://www.freeproxylists.net/zh/?c=&pt=&pr=HTTPS&a%5B%5D=0&a%5B%5D=1&a%5B%5D=2&u=50',
+        ]
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        for url in urls:
+            tree = WebRequest().get(url, proxies=proxies).tree
+            if tree is None:
+                return None
+            ret = tree.xpath('//tr')[4:]
+            for r in ret:
+                try:
+                    ip_script = r.xpath('./td[1]/script/text()')[0]
+                    ip_mask = re.search('(?:")(.*)(?:")',
+                                          ip_script).groups()[0]
+                    ip = re.search('(?:>)([0-9\.]+)(?:<)',
+                                        unquote(ip_mask, 'utf8')).groups()[0]
+                    port = r.xpath('./td[2]/text()')[0]
+                    protocol = r.xpath('./td[3]/text()')[0]
+                    yield f'{protocol}://{ip}:{port}'
+                except Exception as e:
+                    print(type(e), e)
+
+    @staticmethod
+    def freeProxy20():
+        urls = [
+            'https://premproxy.com/list/ip-port/1.htm',
+            'https://premproxy.com/list/ip-port/2.htm',
+            'https://premproxy.com/list/ip-port/3.htm',
+        ]
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        for url in urls:
+            tree = WebRequest().get(url, proxies=proxies).tree
+            if tree is None:
+                return None
+            ret = tree.xpath('//ul[@id="ipportlist"]/li')
+            for r in ret:
+                try:
+                    ip = r.xpath('./li/text()')[0][:-1]
+                    # ip_mask = re.search('(?:")(.*)(?:")',
+                    #                     ip_script).groups()[0]
+                    # ip = re.search('(?:>)([0-9\.]+)(?:<)',
+                    #                unquote(ip_mask, 'utf8')).groups()[0]
+                    port = r.xpath('./li/span/text()')[0]
+                    protocol = 'https'
+                    yield f'{protocol}://{ip}:{port}'
+                except Exception as e:
+                    print(type(e), e)
+
+    @staticmethod
+    def freeProxy21():
+        urls = [
+            'https://www.proxyranker.com/china/list/',
+            'https://www.proxyranker.com/china/list-2/',
+            'https://www.proxyranker.com/china/list-3/',
+            'https://www.proxyranker.com/china/list-4/',
+        ]
+        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        for url in urls:
+            tree = WebRequest().get(url, proxies=proxies).tree
+            if tree is None:
+                return None
+            ret = tree.xpath('//div[@class="bl"]//tr')[1:]
+            for r in ret[:-1]:
+                try:
+                    ip = r.xpath('./td[1]/text()')[0]
+                    port = r.xpath('./td[4]/span/text()')[0]
+                    protocol = 'https'
+                    yield f'{protocol}://{ip}:{port}'
+                except Exception as e:
+                    print(type(e), e)

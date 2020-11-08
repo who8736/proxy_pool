@@ -95,6 +95,9 @@ class WebRequest(object):
         # headers = self.header
         # if header and isinstance(header, dict):
         #     headers.update(header)
+        # proxies = None
+        # if useProxies:
+        #     proxies = {'http': MAINPROXY, 'https': MAINPROXY}
         while True:
             try:
                 self.response = requests.get(url,
@@ -107,8 +110,9 @@ class WebRequest(object):
                 self.log.error("requests: %s error: %s" % (url, str(e)))
                 retry_time -= 1
                 if retry_time <= 0:
-                    resp = Response()
-                    resp.status_code = 200
+                    # resp = Response()
+                    # resp.status_code = 500
+                    self.response.status_code = 500
                     return self
                 self.log.info("retry %s second after" % retry_interval)
                 time.sleep(retry_interval)
