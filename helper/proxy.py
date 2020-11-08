@@ -19,11 +19,14 @@ from setting import PROXY_SCORE_INIT
 
 class Proxy(object):
 
-    def __init__(self, url, score=PROXY_SCORE_INIT, proxy_type="", tag=''):
+    def __init__(self, url, score=PROXY_SCORE_INIT,
+                 proxy_type='', tag='',
+                 source=''):
         self._url = url
         self._score = score
         self._proxy_type = proxy_type
         self._tag = tag
+        self._source = source
 
     @classmethod
     def createFromJson(cls, proxy_json):

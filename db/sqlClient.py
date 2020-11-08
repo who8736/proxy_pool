@@ -60,9 +60,10 @@ class SqlClient():
         :param proxy: Proxy obj
         :return:
         """
-        sql = (f'insert into proxy (url, score, proxy_type, tag) '
+        sql = (f'insert into proxy (url, score, proxy_type, tag, source) '
                f'values("{proxy.url}", "{proxy.score}", '
-               f'"{proxy.proxy_type}", "{proxy.tag}")')
+               f'"{proxy.proxy_type}", "{proxy.tag}", '
+               f'"{proxy.souce}")')
         self.engine.execute(sql)
 
     # def pop(self):

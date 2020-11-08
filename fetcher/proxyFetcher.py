@@ -18,7 +18,7 @@ import requests
 from lxml import etree
 import base64
 from random import choice
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
@@ -353,6 +353,7 @@ class ProxyFetcher(object):
     @staticmethod
     def freeProxy16():
         proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        source = 'free-proxy.cz'
         urls = [
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all',
             'http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2',
@@ -372,12 +373,14 @@ class ProxyFetcher(object):
                         ip = base64.b64decode(ip_base64).decode('utf8')
                         port = tr.xpath('./td[2]/span/text()')[0]
                         protocol = ''.join(tr.xpath('./td[3]/small/text()'))
-                        yield f'{protocol}://{ip}:{port}'
+                        yield Proxy(f'{protocol}://{ip}:{port}',
+                                    source=source)
                     except Exception as e:
                         print(e)
 
     @staticmethod
     def freeProxy17():
+        source = 'www.proxynova.com'
         urls = [
             'https://www.proxynova.com/proxy-server-list/elite-proxies/',
         ]
@@ -394,12 +397,14 @@ class ProxyFetcher(object):
                                           ip_script).groups()[0]
                     port = r.xpath('./td[2]/text()')[0].strip()
                     protocol = 'https'
-                    yield f'{protocol}://{ip}:{port}'
+                    yield Proxy(f'{protocol}://{ip}:{port}',
+                                source=source)
                 except Exception as e:
                     print(e)
 
     @staticmethod
     def freeProxy18():
+        source = 'spys.one'
         urls = [
             'https://spys.one/en/free-proxy-list/',
         ]
@@ -417,12 +422,14 @@ class ProxyFetcher(object):
                     ip = base64.b64decode(ip_base64).decode('utf8')
                     port = r.xpath('./td[2]/span/text()')[0]
                     protocol = r.xpath('./td[3]/small/text()')[0]
-                    yield f'{protocol}://{ip}:{port}'
+                    yield Proxy(f'{protocol}://{ip}:{port}',
+                                source=source)
                 except Exception as e:
                     print(e)
 
     @staticmethod
     def freeProxy19():
+        source = 'www.freeproxylists.net'
         urls = [
             'http://www.freeproxylists.net/zh/?c=&pt=&pr=HTTPS&a%5B%5D=0&a%5B%5D=1&a%5B%5D=2&u=50',
         ]
@@ -441,12 +448,14 @@ class ProxyFetcher(object):
                                         unquote(ip_mask, 'utf8')).groups()[0]
                     port = r.xpath('./td[2]/text()')[0]
                     protocol = r.xpath('./td[3]/text()')[0]
-                    yield f'{protocol}://{ip}:{port}'
+                    yield Proxy(f'{protocol}://{ip}:{port}',
+                                source=source)
                 except Exception as e:
                     print(type(e), e)
 
     @staticmethod
     def freeProxy20():
+        source = 'premproxy.com'
         urls = [
             'https://premproxy.com/list/ip-port/1.htm',
             'https://premproxy.com/list/ip-port/2.htm',
@@ -467,12 +476,14 @@ class ProxyFetcher(object):
                     #                unquote(ip_mask, 'utf8')).groups()[0]
                     port = r.xpath('./li/span/text()')[0]
                     protocol = 'https'
-                    yield f'{protocol}://{ip}:{port}'
+                    yield Proxy(f'{protocol}://{ip}:{port}',
+                                source=source)
                 except Exception as e:
                     print(type(e), e)
 
     @staticmethod
     def freeProxy21():
+        source = 'www.proxyranker.com'
         urls = [
             'https://www.proxyranker.com/china/list/',
             'https://www.proxyranker.com/china/list-2/',
@@ -490,6 +501,7 @@ class ProxyFetcher(object):
                     ip = r.xpath('./td[1]/text()')[0]
                     port = r.xpath('./td[4]/span/text()')[0]
                     protocol = 'https'
-                    yield f'{protocol}://{ip}:{port}'
+                    yield Proxy(f'{protocol}://{ip}:{port}',
+                                source=source)
                 except Exception as e:
                     print(type(e), e)
