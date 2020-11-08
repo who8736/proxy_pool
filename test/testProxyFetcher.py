@@ -29,10 +29,15 @@ from handler.configHandler import ConfigHandler
 #
 def testProxyFetcher():
     proxy_count = 0
-    for proxystr in ProxyFetcher.freeProxy19():
-        print(proxystr)
+    for proxy in ProxyFetcher.freeProxy18():
+        print(proxy.url)
         proxy_count += 1
     print(f'total proxies: {proxy_count}')
 
 if __name__ == '__main__':
+    pass
+
     testProxyFetcher()
+
+    # import sys
+    # print(sys.path)

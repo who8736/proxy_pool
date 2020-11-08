@@ -19,6 +19,7 @@ from lxml import etree
 import base64
 from random import choice
 from urllib.parse import unquote, urlparse
+from  selenium import webdriver
 
 from util.webRequest import WebRequest
 from helper.proxy import Proxy
@@ -408,24 +409,25 @@ class ProxyFetcher(object):
         urls = [
             'https://spys.one/en/free-proxy-list/',
         ]
-        proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        # proxies = {'http': MAINPROXY, 'https': MAINPROXY}
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--proxy-server=' + MAINPROXY)
+        client = webdriver.Chrome(options=chrome_options)
         for url in urls:
-            tree = WebRequest().get(url, proxies=proxies).tree
-            if tree is None:
-                return None
-            ret = tree.xpath('//*[@id="proxy_list"]/tbody/tr')
-            for r in ret:
+            client.get(url)
+            trs = client.find_elements_by_xpath('//table/tbody/tr/td/table/tbody/tr')
+            for r in trs[3:]:
                 try:
-                    ip_script = r.xpath('./td[1]/script/text()')[0]
-                    ip_base64 = re.search('(?:")([\w=]+)(?:")',
-                                          ip_script).groups()[0]
-                    ip = base64.b64decode(ip_base64).decode('utf8')
-                    port = r.xpath('./td[2]/span/text()')[0]
-                    protocol = r.xpath('./td[3]/small/text()')[0]
-                    yield Proxy(f'{protocol}://{ip}:{port}',
+                    tds = r.find_elements_by_tag_name('td')
+                    ip = tds[0].find_element_by_xpath('./font').text
+                    protocol = tds[1].text.split(' ')[0]
+                    yield Proxy(f'{protocol}://{ip}',
                                 source=source)
                 except Exception as e:
                     print(e)
+        client.close()
 
     @staticmethod
     def freeProxy19():
